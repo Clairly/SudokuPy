@@ -137,6 +137,18 @@ class Grid(object):
 
   def solve_space(self, x, y, num):
     if self.space(x, y) == 0: self.grid[x][y] = num
+  
+  def print_line(self, x):
+    print "|", self.space(x,0), self.space(x,1), self.space(x,2), "|", self.space(x,3), self.space(x,4), self.space(x,5), "|", self.space(x,6), self.space(x,7), self.space(x,8), "|"
+    
+
+  def pretty_print(self):
+    print "\n-------------------------"
+    for x in range(0, 9):
+      self.print_line(x)
+      if x == 2 or x == 5:
+        print "-------------------------"
+    print "-------------------------\n"
 
 
 class Puzzle(object):
@@ -146,13 +158,17 @@ class Puzzle(object):
     self.grid = Grid(grid)
     self.possible_states = Queue.PriorityQueue()
     self.possible_states.put((self.grid.priority(), self.grid))
+    self.set_of_possible_states = Set()
+    self.set_of_possible_states.add(self.grid)
     self.visited_grids = []
 
   def solve(self):
+    iterations = 0
     # only try to solve if it's not already completed and there are still possible grids to examine
     while self.possible_states.empty() != True:
       # pop off first item in priority queue and add it to visited grids
       current_priority, current_grid = self.possible_states.get()
+      self.set_of_possible_states.discard(current_grid)
       
       # if the current grid has not already been examined:
       if current_grid in self.visited_grids: break  
@@ -162,7 +178,10 @@ class Puzzle(object):
 
       self.visited_grids.append(current_grid)
 
-      print current_grid.grid
+      iterations = iterations + 1
+      print "Iteration:", iterations
+      current_grid.pretty_print()
+
       # get all space options for this grid
       # if there are no options, this grid is not feasible; move on to the next one
       options = current_grid.find_all_possibilities()
@@ -181,10 +200,11 @@ class Puzzle(object):
           new_grid.solve_space(x, y, number_available)
           
           # check that the new grid is not in the visited list or in the priority queue or unsolvable
-          if new_grid in self.visited_grids or new_grid.is_solvable == False: #TODO or new_grid in self.possible_states.items():
+          if new_grid in self.visited_grids or new_grid.is_solvable == False or new_grid in self.set_of_possible_states:
             break
           
           # add grid to priority queue (priority=total number of possibilities for all open spaces, object=grid)
           self.possible_states.put((new_grid.priority(), new_grid))
+          self.set_of_possible_states.add(new_grid)
 
     return False
